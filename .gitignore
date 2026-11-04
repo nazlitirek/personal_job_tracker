@@ -1,0 +1,12 @@
+# Personal files: keep your CV out of git
+*.pdf
+*.doc
+*.docx
+
+# Secrets
+.env
+.env.*
+
+# Dependencies and build output
+node_modules/
+.next/
