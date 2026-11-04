@@ -119,6 +119,15 @@ test("a senior job is limited to 40% even with matching skills", () => {
   assert.match(details.parts[2].note, /limited to 40%/);
 });
 
+test("AI and machine learning jobs get full role points", () => {
+  const score = (title: string) =>
+    scoreJob({ title, description: "", roleType: "AI and data", level: "Not stated" }, cv).details.parts[1].points;
+  assert.equal(score("AI Engineer"), 20);
+  assert.equal(score("Machine Learning Engineer"), 20);
+  assert.equal(score("Data Scientist"), 16);
+  assert.equal(score("Data Analyst"), 12);
+});
+
 test("years of experience lower the level part", () => {
   const { details } = scoreJob(
     {

@@ -28,7 +28,14 @@ const BOARDS: [string, BoardKind, string][] = [
   ["iyzico", "lever", "iyzico"],
 ];
 
-const HIMALAYAS_SEARCHES = ["product manager", "full stack", "computer vision", "software engineer"];
+const HIMALAYAS_SEARCHES = [
+  "product manager",
+  "full stack",
+  "computer vision",
+  "software engineer",
+  "ai engineer",
+  "machine learning engineer",
+];
 const HIMALAYAS_PAGES = 2;
 const MAX_DESCRIPTION = 20000;
 

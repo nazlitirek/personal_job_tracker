@@ -229,6 +229,9 @@ const ROLE_FIT: Record<RoleType, number> = {
   Other: 0.2,
 };
 
+// AI and machine learning jobs are target jobs. Other data jobs are close to them.
+const AI_TITLE = /machine learning|\bml\b|\bai\b|yapay zeka/;
+
 // Data analyst work is further from the CV than AI and machine learning work.
 const DATA_ANALYST_FIT = 0.6;
 
@@ -255,7 +258,12 @@ ${job.description}`, cv.addedSkills);
     : "No known skills found in the job text, so this part stays low";
 
   // Field and role: 20%
-  const roleFit = /data analy|veri analist/.test(plain(job.title)) ? DATA_ANALYST_FIT : ROLE_FIT[job.roleType];
+  const titleWords = plain(job.title);
+  const roleFit = /data analy|veri analist/.test(titleWords)
+    ? DATA_ANALYST_FIT
+    : AI_TITLE.test(titleWords)
+      ? 1
+      : ROLE_FIT[job.roleType];
   const roleNote =
     job.roleType === "Other"
       ? "Outside your target jobs"

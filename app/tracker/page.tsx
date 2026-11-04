@@ -7,6 +7,14 @@ import type { Application, Stage } from "@/lib/store";
 
 const STAGES: Stage[] = ["Saved", "Applied", "Interview", "Offer", "Rejected"];
 
+const STAGE_LOOK: Record<Stage, { emoji: string; empty: string }> = {
+  Saved: { emoji: "🔖", empty: "Jobs you like go here" },
+  Applied: { emoji: "💌", empty: "No applications yet" },
+  Interview: { emoji: "💬", empty: "Interviews will land here" },
+  Offer: { emoji: "🎉", empty: "Your offers will shine here" },
+  Rejected: { emoji: "🌧️", empty: "Nothing here, and that is fine" },
+};
+
 export default function TrackerPage() {
   const [items, setItems] = useState<Application[] | null>(null);
   const [over, setOver] = useState<Stage | null>(null);
@@ -46,14 +54,14 @@ export default function TrackerPage() {
     <>
       <div className="head">
         <div>
-          <h1>Tracker</h1>
+          <h1>Your applications 💼</h1>
           <div className="quiet">{items?.length ?? 0} jobs. Drag a card or change its stage.</div>
         </div>
       </div>
       {error && <div className="notice error">{error}</div>}
       {items !== null && items.length === 0 && (
-        <div className="empty">
-          Nothing here yet. Press Save on a job in the <Link href="/">job list</Link>.
+        <div className="notice">
+          Nothing here yet. Press ♡ Save on a job in the <Link href="/">job list</Link>.
         </div>
       )}
       <div className="board">
@@ -62,7 +70,7 @@ export default function TrackerPage() {
           return (
             <section
               key={stage}
-              className={`column ${over === stage ? "over" : ""}`}
+              className={`column stage-${stage.toLowerCase()} ${over === stage ? "over" : ""}`}
               onDragOver={(event) => {
                 event.preventDefault();
                 setOver(stage);
@@ -75,7 +83,8 @@ export default function TrackerPage() {
                 if (jobId) change(jobId, { stage });
               }}
             >
-              <h2>{stage} <span className="quiet">{cards.length}</span></h2>
+              <h2>{STAGE_LOOK[stage].emoji} {stage} <span className="count">{cards.length}</span></h2>
+              {cards.length === 0 && <div className="column-empty">{STAGE_LOOK[stage].empty}</div>}
               {cards.map((item) => (
                 <div
                   className="card ticket"

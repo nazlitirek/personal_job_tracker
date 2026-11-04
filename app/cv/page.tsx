@@ -38,14 +38,14 @@ export default function CvPage() {
     <>
       <div className="head">
         <div>
-          <h1>CV</h1>
+          <h1>Your CV 📄</h1>
           {cv && <div className="quiet">Reading {cv.fileName}</div>}
         </div>
         <button onClick={load}>Check again</button>
       </div>
 
       {!loaded ? (
-        <div className="empty">Looking for your CV…</div>
+        <div className="empty"><b>🔎</b>Looking for your CV…</div>
       ) : !cv ? (
         <div className="notice">
           No CV found. Put your CV as a PDF or Word (.docx) file in the project folder, next to <code>README.md</code>, then press Check again.
@@ -56,7 +56,7 @@ export default function CvPage() {
       ) : (
         <>
           <section className="card section">
-            <h2>Skills used for scoring</h2>
+            <h2>💪 Skills used for scoring</h2>
             <div className="chips">
               {cv.skills.length === 0 && <span className="quiet">No known skills found. Add yours below.</span>}
               {cv.skills.map((skill) => (
@@ -76,11 +76,11 @@ export default function CvPage() {
               }}
             >
               <input value={newSkill} onChange={(event) => setNewSkill(event.target.value)} placeholder="Add a skill" />
-              <button disabled={!newSkill.trim()}>Add</button>
+              <button className="soft" disabled={!newSkill.trim()}>+ Add</button>
             </form>
           </section>
           <section className="card section">
-            <h2>Education lines found</h2>
+            <h2>🎓 Education</h2>
             {cv.education.length ? (
               <ul>{cv.education.map((line) => <li key={line}>{line}</li>)}</ul>
             ) : (
@@ -88,7 +88,7 @@ export default function CvPage() {
             )}
           </section>
           <section className="card section">
-            <h2>Experience lines found</h2>
+            <h2>💼 Experience</h2>
             {cv.experience.length ? (
               <ul>{cv.experience.map((line) => <li key={line}>{line}</li>)}</ul>
             ) : (

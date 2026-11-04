@@ -134,7 +134,7 @@ export default function JobsPage() {
     <>
       <div className="head">
         <div>
-          <h1>Jobs</h1>
+          <h1>Jobs for you ✨</h1>
           <div className="quiet">
             {shown.length} of {jobs?.length ?? 0} jobs
             {lastFetch
@@ -143,7 +143,7 @@ export default function JobsPage() {
           </div>
         </div>
         <button className="main" onClick={refresh} disabled={fetching}>
-          {fetching ? "Fetching jobs…" : "Fetch new jobs"}
+          {fetching ? "Looking for jobs…" : "🔄 Fetch new jobs"}
         </button>
       </div>
 
@@ -206,7 +206,7 @@ export default function JobsPage() {
       </div>
 
       <details className="add card">
-        <summary>Add a job by hand, for example from LinkedIn</summary>
+        <summary>✍️ Add a job by hand, for example from LinkedIn</summary>
         <form className="form" onSubmit={addJob}>
           <input name="title" placeholder="Job title" required />
           <input name="company" placeholder="Company" />
@@ -220,9 +220,9 @@ export default function JobsPage() {
       </details>
 
       {jobs === null || (fetching && jobs.length === 0) ? (
-        <div className="empty">Loading jobs…</div>
+        <div className="empty"><b>🔎</b>Looking for jobs…</div>
       ) : shown.length === 0 ? (
-        <div className="empty">No jobs match these filters.</div>
+        <div className="empty"><b>🫧</b>No jobs match these filters. Try fewer filters.</div>
       ) : (
         <div className="list">
           {shown.map((job) => (
@@ -235,7 +235,7 @@ export default function JobsPage() {
                   ) : (
                     job.title
                   )}
-                  <span className="tag">{job.roleType}</span>
+                  <span className={`tag tag-${job.roleType.toLowerCase().replace(/\s+/g, "-")}`}>{job.roleType}</span>
                   {job.level !== "Not stated" && <span className="tag">{job.level}</span>}
                 </div>
                 <div className="quiet">
@@ -255,28 +255,35 @@ export default function JobsPage() {
               </div>
               <div className="actions">
                 {job.stage ? (
-                  <Link href="/tracker" className="quiet">In tracker: {job.stage}</Link>
+                  <Link href="/tracker" className="tracked">✓ {job.stage}</Link>
                 ) : (
-                  <button onClick={() => save(job)}>Save</button>
+                  <button className="soft" onClick={() => save(job)}>♡ Save</button>
                 )}
-                <button onClick={() => hide(job)} title="Never show this job again">Hide</button>
+                <button className="ghost" onClick={() => hide(job)} title="Never show this job again">Hide</button>
               </div>
               {open === job.id && job.details && (
                 <div className="why">
-                  <table>
-                    <tbody>
-                      {job.details.parts.map((part) => (
-                        <tr key={part.name}>
-                          <td><strong>{part.name}</strong></td>
-                          <td>{part.points} of {part.weight}</td>
-                          <td>{part.note}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="chips">
-                    {job.details.have.map((skill) => <span className="chip have" key={skill}>Have: {skill}</span>)}
-                    {job.details.missing.map((skill) => <span className="chip missing" key={skill}>Missing: {skill}</span>)}
+                  {job.details.parts.map((part) => (
+                    <div className="part" key={part.name}>
+                      <strong>{part.name}</strong>
+                      <div className="bar"><i style={{ width: `${(part.points / part.weight) * 100}%` }} /></div>
+                      <span>{part.points} of {part.weight}</span>
+                      <span className="note">{part.note}</span>
+                    </div>
+                  ))}
+                  <div className="skills">
+                    {job.details.have.length > 0 && (
+                      <div>
+                        <span className="skills-label">You have</span>
+                        {job.details.have.map((skill) => <span className="chip have" key={skill}>✓ {skill}</span>)}
+                      </div>
+                    )}
+                    {job.details.missing.length > 0 && (
+                      <div>
+                        <span className="skills-label">Missing</span>
+                        {job.details.missing.map((skill) => <span className="chip missing" key={skill}>{skill}</span>)}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
