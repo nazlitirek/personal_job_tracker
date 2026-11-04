@@ -10,3 +10,11 @@
 # Dependencies and build output
 node_modules/
 .next/
+
+# Local database and TypeScript build info
+data/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local editor settings
+.claude/
