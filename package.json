@@ -10,6 +10,7 @@
     "test": "node --experimental-strip-types --test lib/*.test.ts"
   },
   "dependencies": {
+    "mammoth": "^1.13.0",
     "next": "^16.4.5",
     "pdf-parse": "^1.1.1",
     "react": "^19.3.1",

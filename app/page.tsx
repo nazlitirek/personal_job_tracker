@@ -9,11 +9,20 @@ const REFRESH_AFTER_HOURS = 6;
 const LEVELS = ["Intern", "Junior", "Not stated", "Senior"];
 const TYPES = ["Computer vision", "Product", "Full stack", "AI and data", "Software", "Other"];
 
+const OLD_AFTER_DAYS = 180;
+
+function daysSince(date: string): number {
+  return Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+}
+
 function ago(date: string | null): string {
   if (!date) return "date not stated";
-  const days = Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+  const days = daysSince(date);
   if (days <= 0) return "today";
-  return days === 1 ? "1 day ago" : `${days} days ago`;
+  if (days === 1) return "1 day ago";
+  if (days < 60) return `${days} days ago`;
+  if (days < 730) return `${Math.floor(days / 30)} months ago`;
+  return `${Math.floor(days / 365)} years ago`;
 }
 
 export default function JobsPage() {
@@ -23,6 +32,7 @@ export default function JobsPage() {
   const [fetching, setFetching] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [open, setOpen] = useState<number | null>(null);
+  const [lastHidden, setLastHidden] = useState<Job | null>(null);
   const [filters, setFilters] = useState({ workplace: "", type: "", level: "", days: "", min: "0", place: "" });
   const started = useRef(false);
 
@@ -93,6 +103,14 @@ export default function JobsPage() {
 
   async function hide(job: Job) {
     await fetch(`/api/jobs/${job.id}`, { method: "DELETE" });
+    setLastHidden(job);
+    await load();
+  }
+
+  async function undoHide() {
+    if (!lastHidden) return;
+    await fetch(`/api/jobs/${lastHidden.id}`, { method: "PATCH" });
+    setLastHidden(null);
     await load();
   }
 
@@ -119,7 +137,9 @@ export default function JobsPage() {
           <h1>Jobs</h1>
           <div className="quiet">
             {shown.length} of {jobs?.length ?? 0} jobs
-            {lastFetch ? ` · updated ${ago(lastFetch)}` : ""}
+            {lastFetch
+              ? ` · updated ${new Date(lastFetch).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}`
+              : ""}
           </div>
         </div>
         <button className="main" onClick={refresh} disabled={fetching}>
@@ -133,6 +153,11 @@ export default function JobsPage() {
         </div>
       )}
       {message && <div className="notice error">{message}</div>}
+      {lastHidden && (
+        <div className="notice">
+          Hidden: {lastHidden.title}. <button className="link" onClick={undoHide}>Undo</button>
+        </div>
+      )}
 
       <div className="filters">
         <label>
@@ -145,7 +170,7 @@ export default function JobsPage() {
         </label>
         <label>
           Location
-          <input value={filters.place} onChange={set("place")} placeholder="Istanbul" />
+          <input value={filters.place} onChange={set("place")} placeholder="Any location" />
         </label>
         <label>
           Job type
@@ -217,6 +242,7 @@ export default function JobsPage() {
                   {job.company} · {job.location}
                   {job.workplace !== "Not stated" && job.workplace !== "Remote" ? ` · ${job.workplace}` : ""}
                   {" · "}posted {ago(job.postedAt)}
+                  {job.postedAt && daysSince(job.postedAt) > OLD_AFTER_DAYS ? " (old post, check it is still open)" : ""}
                   {job.source === "Himalayas" && (
                     <> · via <a href="https://himalayas.app" target="_blank" rel="noreferrer">Himalayas</a></>
                   )}

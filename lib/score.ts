@@ -36,7 +36,7 @@ const ROLE_GROUPS: [Exclude<RoleType, "Other">, RegExp][] = [
 ];
 
 const NOT_WANTED =
-  /sales|marketing artist|recruit|legal|content producer|business develop|developer relations/;
+  /sales|marketing artist|recruit|legal|content producer|business develop|developer relations|account/;
 
 /** Returns the job's group, or null when it is outside the target jobs. */
 export function classifyRole(title: string): Exclude<RoleType, "Other"> | null {
@@ -75,19 +75,22 @@ const SKILLS: [string, string[]][] = [
   [".NET", [".net", "asp.net"]],
   ["Go", ["golang"]],
   ["Kotlin", ["kotlin"]],
-  ["Swift", ["swift"]],
+  ["Rust", ["rustlang"]],
   ["PHP", ["php"]],
   ["SQL", ["sql", "mysql", "postgresql", "postgres", "t-sql"]],
   ["NoSQL", ["nosql", "mongodb", "redis", "cassandra"]],
   ["HTML/CSS", ["html", "css"]],
-  ["React", ["react", "reactjs", "react.js"]],
+  ["React", ["reactjs", "react.js", "react native"]],
   ["Next.js", ["next.js", "nextjs"]],
   ["Vue", ["vue", "vuejs", "vue.js"]],
   ["Angular", ["angular"]],
   ["Node.js", ["node.js", "nodejs", "node"]],
-  ["Spring", ["spring boot", "spring"]],
+  ["Spring", ["spring boot"]],
   ["Django", ["django"]],
-  ["Flask", ["flask"]],
+  ["FastAPI", ["fastapi"]],
+  ["Firebase", ["firebase"]],
+  ["Vite", ["vite"]],
+  ["Postman", ["postman"]],
   ["REST APIs", ["rest api", "rest apis", "restful"]],
   ["GraphQL", ["graphql"]],
   ["Git", ["git", "github", "gitlab"]],
@@ -98,15 +101,18 @@ const SKILLS: [string, string[]][] = [
   ["Google Cloud", ["gcp", "google cloud"]],
   ["Linux", ["linux"]],
   ["CI/CD", ["ci/cd", "continuous integration"]],
+  ["MLOps", ["mlops", "ml ops"]],
   ["Machine learning", ["machine learning", "ml", "makine ogrenmesi"]],
   ["Deep learning", ["deep learning", "derin ogrenme", "neural network", "neural networks"]],
   ["Computer vision", ["computer vision", "image processing", "goruntu isleme"]],
   ["NLP", ["nlp", "natural language processing"]],
   ["LLMs", ["llm", "llms", "generative ai", "genai"]],
+  ["Hugging Face", ["hugging face", "huggingface"]],
+  ["Object detection", ["object detection", "object tracking", "image segmentation"]],
   ["PyTorch", ["pytorch"]],
   ["TensorFlow", ["tensorflow", "keras"]],
   ["OpenCV", ["opencv"]],
-  ["YOLO", ["yolo"]],
+  ["YOLO", ["yolo", "yolov5", "yolov7", "yolov8", "yolov9", "yolov10", "yolov11", "yolo11", "yolo26"]],
   ["scikit-learn", ["scikit-learn", "sklearn"]],
   ["Pandas", ["pandas"]],
   ["NumPy", ["numpy"]],
@@ -128,6 +134,16 @@ const SKILLS: [string, string[]][] = [
   ["Algorithms", ["algorithms", "data structures", "algoritma"]],
 ];
 
+// These names are also everyday words ("react quickly", "swift response"),
+// so they only count when written with a capital letter.
+const CAPITALIZED_SKILLS: [string, string][] = [
+  ["React", "React"],
+  ["Swift", "Swift"],
+  ["Spring", "Spring"],
+  ["Flask", "Flask"],
+  ["Rust", "Rust"],
+];
+
 function hasTerm(text: string, term: string): boolean {
   const escaped = term.replace(/[.*+?^${}()|[\]\\/]/g, "\\$&");
   return new RegExp(`(?<![a-z0-9+#.])${escaped}(?![a-z0-9+#])`).test(text);
@@ -139,12 +155,44 @@ export function findSkills(text: string, extra: string[] = []): string[] {
   const found = SKILLS.filter(([, terms]) => terms.some((term) => hasTerm(clean, term))).map(
     ([name]) => name,
   );
+  for (const [skill, word] of CAPITALIZED_SKILLS) {
+    if (!found.includes(skill) && hasTerm(text, word)) found.push(skill);
+  }
   for (const skill of extra) {
     if (!found.some((name) => plain(name) === plain(skill)) && hasTerm(clean, plain(skill))) {
       found.push(skill);
     }
   }
   return found;
+}
+
+const OTHER_SECTIONS =
+  /^(about|about me|summary|profile|projects?|skills|technical skills|languages|certifications?.*|volunteering|references|awards|publications|hakkimda|ozet|projeler|yetenekler|beceriler|diller|sertifikalar|referanslar)$/;
+const EXPERIENCE_HEADING = /^((work|professional) )?experience$|^(is )?deneyim(ler)?i?$/;
+const EDUCATION_HEADING = /^education$|^egitim( bilgileri)?$/;
+
+/** Finds the education and experience lines, using the CV's own section headings. */
+export function readCvSections(text: string): { education: string[]; experience: string[] } {
+  const education: string[] = [];
+  const experience: string[] = [];
+  let section: "education" | "experience" | null = null;
+
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.replace(/\s*\t\s*/g, " · ").replace(/ {2,}/g, " ").trim();
+    const name = plain(line).replace(/:$/, "");
+    if (EXPERIENCE_HEADING.test(name)) section = "experience";
+    else if (EDUCATION_HEADING.test(name)) section = "education";
+    else if (OTHER_SECTIONS.test(name)) section = null;
+    else if (line.length >= 160 || line.length < 4) continue;
+    else if (section === "experience" && /\b(19|20)\d{2}\b/.test(line)) experience.push(line);
+    else if (
+      section === "education" &&
+      /\b(19|20)\d{2}\b|universit|bachelor|b\.?sc\b|m\.?sc\b|lisans|gpa/.test(name)
+    ) {
+      education.push(line);
+    }
+  }
+  return { education, experience };
 }
 
 const OTHER_LANGUAGES =
@@ -177,9 +225,12 @@ const ROLE_FIT: Record<RoleType, number> = {
   Product: 1,
   "Full stack": 1,
   Software: 0.7,
-  "AI and data": 0.6,
+  "AI and data": 0.8,
   Other: 0.2,
 };
+
+// Data analyst work is further from the CV than AI and machine learning work.
+const DATA_ANALYST_FIT = 0.6;
 
 const TOO_SENIOR_FIT = 0.1;
 const TOO_SENIOR_MAX_SCORE = 40;
@@ -192,17 +243,19 @@ export function scoreJob(job: JobInput, cv: CvInput): { score: number; details: 
   const cvText = plain(cv.text);
 
   // Skills: 50%
-  const jobSkills = findSkills(jobText, cv.addedSkills);
+  const jobSkills = findSkills(`${job.title}
+${job.description}`, cv.addedSkills);
   const mine = new Set(cv.skills.map(plain));
   const have = jobSkills.filter((skill) => mine.has(plain(skill)));
   const missing = jobSkills.filter((skill) => !mine.has(plain(skill)));
-  // Starts from neutral, so one matching skill alone is not a perfect fit.
-  const skillFit = (have.length + 1) / (jobSkills.length + 2);
+  // Starts low: a job with little evidence should not beat one with real matches.
+  const skillFit = (have.length + 0.5) / (jobSkills.length + 1.5);
   const skillNote = jobSkills.length
     ? `You have ${have.length} of the ${jobSkills.length} skills found in this job`
-    : "No known skills found in the job text, so this part is neutral";
+    : "No known skills found in the job text, so this part stays low";
 
   // Field and role: 20%
+  const roleFit = /data analy|veri analist/.test(plain(job.title)) ? DATA_ANALYST_FIT : ROLE_FIT[job.roleType];
   const roleNote =
     job.roleType === "Other"
       ? "Outside your target jobs"
@@ -214,7 +267,7 @@ export function scoreJob(job: JobInput, cv: CvInput): { score: number; details: 
   const years = yearsAsked(jobText);
   if (job.level === "Intern" || job.level === "Junior") {
     levelFit = 1;
-    levelNote = `Title says ${job.level.toLowerCase()} or new grad`;
+    levelNote = "Entry-level job, a good fit for a new graduate";
   } else if (job.level === "Senior") {
     levelFit = 0.1;
     levelNote = "Senior job; you are a new graduate";
@@ -241,7 +294,8 @@ export function scoreJob(job: JobInput, cv: CvInput): { score: number; details: 
   const languages = requiredLanguages(jobText).filter((language) => !cvText.includes(language));
   if (languages.length) {
     schoolFit *= 0.4;
-    schoolNotes.push(`asks for ${languages.join(", ")}`);
+    const names = languages.map((name) => name[0].toUpperCase() + name.slice(1));
+    schoolNotes.push(`asks for ${names.join(", ")}`);
   }
 
   const part = (name: string, weight: number, fit: number, note: string): ScorePart => ({
@@ -253,7 +307,7 @@ export function scoreJob(job: JobInput, cv: CvInput): { score: number; details: 
 
   const parts = [
     part("Skills", 50, skillFit, skillNote),
-    part("Field and role", 20, ROLE_FIT[job.roleType], roleNote),
+    part("Field and role", 20, roleFit, roleNote),
     part("Experience level", 20, levelFit, levelNote),
     part(
       "Education and language",

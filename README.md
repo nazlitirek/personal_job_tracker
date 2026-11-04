@@ -13,7 +13,7 @@ Then open http://127.0.0.1:3000.
 
 ## Add your CV
 
-Put your CV as a PDF in this folder, next to this file. If there are several PDFs, the newest is used. Git ignores PDF files, so it stays on your computer.
+Put your CV as a PDF or Word (.docx) file in this folder, next to this file. If there are several, the newest is used. Git ignores these files, so it stays on your computer.
 
 ## Where the jobs come from
 

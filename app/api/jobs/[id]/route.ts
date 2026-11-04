@@ -1,8 +1,18 @@
 import { NextResponse } from "next/server";
-import { hideJob } from "@/lib/store";
+import { setJobHidden } from "@/lib/store";
 
-export async function DELETE(_request: Request, context: { params: Promise<{ id: string }> }) {
+type Context = { params: Promise<{ id: string }> };
+
+/** Hides a job. */
+export async function DELETE(_request: Request, context: Context) {
   const { id } = await context.params;
-  await hideJob(Number(id));
+  await setJobHidden(Number(id), true);
+  return NextResponse.json({ ok: true });
+}
+
+/** Brings a hidden job back. */
+export async function PATCH(_request: Request, context: Context) {
+  const { id } = await context.params;
+  await setJobHidden(Number(id), false);
   return NextResponse.json({ ok: true });
 }

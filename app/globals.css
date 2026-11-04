@@ -85,6 +85,7 @@ button.link { border: 0; background: none; color: var(--accent); padding: 0; }
 .filters { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; align-items: end; }
 .filters label { display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--quiet); }
 .filters select, .filters input { color: var(--ink); font-size: 14px; }
+::placeholder { color: var(--quiet); opacity: 0.8; }
 
 .card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
 .list { display: flex; flex-direction: column; gap: 8px; }
@@ -92,7 +93,7 @@ button.link { border: 0; background: none; color: var(--accent); padding: 0; }
 .job { display: grid; grid-template-columns: 56px 1fr auto; gap: 12px; align-items: start; }
 .job-title { font-weight: 600; }
 .actions { display: flex; gap: 8px; align-items: center; }
-.tag { font-size: 12px; color: var(--quiet); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin-left: 6px; font-weight: 400; }
+.tag { display: inline-block; white-space: nowrap; font-size: 12px; color: var(--quiet); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; margin-left: 6px; font-weight: 400; }
 
 .score { display: inline-block; min-width: 48px; text-align: center; font-weight: 700; border-radius: 6px; padding: 3px 6px; }
 .score-high { background: var(--high-bg); color: var(--high); }
@@ -121,6 +122,9 @@ details.add summary { cursor: pointer; font-weight: 500; }
 .column h2 { display: flex; justify-content: space-between; margin: 0; }
 .ticket { display: flex; flex-direction: column; gap: 6px; font-size: 13px; cursor: grab; }
 .ticket .job-title { font-size: 14px; }
+.ticket-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ticket summary { cursor: pointer; color: var(--accent); margin-bottom: 6px; }
+.ticket details label { margin-bottom: 6px; }
 .ticket label { display: flex; flex-direction: column; gap: 2px; color: var(--quiet); font-size: 12px; }
 .ticket input, .ticket select, .ticket textarea { color: var(--ink); width: 100%; font-size: 13px; padding: 4px 6px; }
 .ticket textarea { min-height: 52px; resize: vertical; }

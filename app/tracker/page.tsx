@@ -81,7 +81,14 @@ export default function TrackerPage() {
                   className="card ticket"
                   key={item.id}
                   draggable
-                  onDragStart={(event) => event.dataTransfer.setData("text/plain", String(item.id))}
+                  onDragStart={(event) => {
+                    // Lets you select text in a box without dragging the whole card.
+                    if ((event.target as HTMLElement).closest?.("input, textarea, select")) {
+                      event.preventDefault();
+                      return;
+                    }
+                    event.dataTransfer.setData("text/plain", String(item.id));
+                  }}
                 >
                   <div className="job-title">
                     {item.link ? (
@@ -90,22 +97,16 @@ export default function TrackerPage() {
                       item.title
                     )}
                   </div>
-                  <div className="quiet">{item.company}</div>
-                  <div><ScoreBadge score={item.score} /></div>
+                  <div className="ticket-head">
+                    <span className="quiet">{item.company}</span>
+                    <ScoreBadge score={item.score} />
+                  </div>
                   {!item.active && <div className="due">This job may be closed.</div>}
                   <label>
                     Stage
                     <select value={item.stage} onChange={(event) => change(item.id, { stage: event.target.value })}>
                       {STAGES.map((name) => <option key={name}>{name}</option>)}
                     </select>
-                  </label>
-                  <label>
-                    Date applied
-                    <input
-                      type="date"
-                      value={item.appliedDate ?? ""}
-                      onChange={(event) => change(item.id, { appliedDate: event.target.value })}
-                    />
                   </label>
                   <label>
                     <span className={item.nextDate && item.nextDate <= today ? "due" : ""}>
@@ -117,18 +118,29 @@ export default function TrackerPage() {
                       onChange={(event) => change(item.id, { nextDate: event.target.value })}
                     />
                   </label>
-                  <label>
-                    Notes
-                    {/* The key resets this box when saved notes change. */}
-                    <textarea
-                      key={item.notes}
-                      defaultValue={item.notes}
-                      onBlur={(event) => {
-                        if (event.target.value !== item.notes) change(item.id, { notes: event.target.value });
-                      }}
-                    />
-                  </label>
-                  <div><button className="link" onClick={() => remove(item.id)}>Remove from tracker</button></div>
+                  <details>
+                    <summary>Date applied and notes</summary>
+                    <label>
+                      Date applied
+                      <input
+                        type="date"
+                        value={item.appliedDate ?? ""}
+                        onChange={(event) => change(item.id, { appliedDate: event.target.value })}
+                      />
+                    </label>
+                    <label>
+                      Notes
+                      {/* The key resets this box when saved notes change. */}
+                      <textarea
+                        key={item.notes}
+                        defaultValue={item.notes}
+                        onBlur={(event) => {
+                          if (event.target.value !== item.notes) change(item.id, { notes: event.target.value });
+                        }}
+                      />
+                    </label>
+                    <button className="link" onClick={() => remove(item.id)}>Remove from tracker</button>
+                  </details>
                 </div>
               ))}
             </section>

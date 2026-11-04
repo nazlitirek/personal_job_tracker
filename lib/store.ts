@@ -257,9 +257,9 @@ export async function addManualJob(input: {
   save(db);
 }
 
-export async function hideJob(id: number): Promise<void> {
+export async function setJobHidden(id: number, hidden: boolean): Promise<void> {
   const db = await getDb();
-  db.run("UPDATE jobs SET hidden = 1 WHERE id = ?", [id]);
+  db.run("UPDATE jobs SET hidden = ? WHERE id = ?", [hidden ? 1 : 0, id]);
   save(db);
 }
 

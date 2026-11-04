@@ -1,16 +1,18 @@
-// Reads the CV (a PDF in the project folder). The file is never uploaded anywhere.
+// Reads the CV (a PDF or Word file in the project folder). The file is never uploaded anywhere.
 import fs from "node:fs";
 import path from "node:path";
+import mammoth from "mammoth";
 // The package's main file runs a debug check on import, so load this one directly.
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
-import { findSkills } from "./score";
+import { findSkills, readCvSections } from "./score";
 import { getCv, setCv, type CvState } from "./store";
 
 function findCvFile(): { name: string; full: string; key: string } | null {
   const folder = process.env.CV_DIR || process.cwd();
   const files = fs
     .readdirSync(folder, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".pdf"))
+    // Word keeps a hidden "~$" file beside any document that is open.
+    .filter((entry) => entry.isFile() && /\.(pdf|docx)$/i.test(entry.name) && !entry.name.startsWith("~$"))
     .map((entry) => {
       const full = path.join(folder, entry.name);
       const info = fs.statSync(full);
@@ -20,13 +22,15 @@ function findCvFile(): { name: string; full: string; key: string } | null {
   return files[0] ?? null;
 }
 
-function matchingLines(text: string, pattern: RegExp, limit: number): string[] {
-  const lines = text
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line.length > 3 && line.length < 160 && pattern.test(line));
-  return [...new Set(lines)].slice(0, limit);
+async function readText(file: string): Promise<string> {
+  if (file.toLowerCase().endsWith(".docx")) {
+    return (await mammoth.extractRawText({ path: file })).value;
+  }
+  return (await pdfParse(fs.readFileSync(file))).text;
 }
+
+// Next.js can load this file more than once, so this lives on globalThis.
+const shared = globalThis as unknown as { cvChecked?: boolean };
 
 let running: Promise<CvState | null> | null = null;
 
@@ -46,7 +50,10 @@ async function doSync(): Promise<CvState | null> {
     if (current) await setCv(null);
     return null;
   }
-  if (current?.fileKey === file.key) return current;
+  // Read once after each start too, so changes to the skills list reach the scores.
+  const firstCheck = !shared.cvChecked;
+  shared.cvChecked = true;
+  if (current?.fileKey === file.key && !firstCheck) return current;
 
   // Skills you added or removed by hand carry over to a new CV file.
   const next: CvState = {
@@ -62,21 +69,16 @@ async function doSync(): Promise<CvState | null> {
   };
 
   try {
-    const { text } = await pdfParse(fs.readFileSync(file.full));
+    const text = await readText(file.full);
     next.text = text;
     if (text.trim().length < 50) {
-      next.error = "This PDF has almost no readable text. It may be a scanned image.";
+      next.error = "This file has almost no readable text. It may be a scanned image.";
     } else {
       next.foundSkills = findSkills(text);
-      next.education = matchingLines(
-        text,
-        /universit|üniversite|bachelor|b\.?sc\b|m\.?sc\b|degree|gpa|lisans|engineering student/i,
-        4,
-      );
-      next.experience = matchingLines(text, /\b(19|20)\d{2}\b.*(-|–|—|present|now|current|günümüz|devam)/i, 8);
+      Object.assign(next, readCvSections(text));
     }
   } catch {
-    next.error = "Could not read this PDF. Try saving it again as a new PDF.";
+    next.error = "Could not read this file. Try saving it again as a new PDF.";
   }
 
   await setCv(next);

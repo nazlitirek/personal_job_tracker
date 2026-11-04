@@ -48,7 +48,7 @@ export default function CvPage() {
         <div className="empty">Looking for your CV…</div>
       ) : !cv ? (
         <div className="notice">
-          No CV found. Put your CV as a PDF in the project folder, next to <code>README.md</code>, then press Check again.
+          No CV found. Put your CV as a PDF or Word (.docx) file in the project folder, next to <code>README.md</code>, then press Check again.
           It stays on your computer and git ignores it.
         </div>
       ) : cv.error ? (
